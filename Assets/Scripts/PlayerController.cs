@@ -4,25 +4,58 @@ using UnityEngine;
 
 public class PlayerController : MonoBehaviour
 {
-    public float mouseSpeed = 5;
-    public Transform player;
-    public Camera yourCam;
+    CharacterController charCont;
+    Animator anim;
+
+    [SerializeField]
+    private float speed = 7f;
+    [SerializeField]
+    private float jumpForce = 7f;
+    private const float gravity = 25f;
+
+    // movement vector
+    private Vector3 moving;
+    private Vector3 lastPosition;
+    private void Start() 
+    {
+        charCont = GetComponent<CharacterController>();
+        moving = Vector3.zero;
+        lastPosition = Vector3.zero;
+        anim = GetComponentInChildren<Animator>();
+    }
 
     private void Update()
     {
-        float X = Input.GetAxis("Mouse X") * mouseSpeed;
-        float Y = Input.GetAxis("Mouse Y") * mouseSpeed;
+        Movement();
+    }
 
-        player.Rotate(0, X, 0); // Player rotates on Y axis, your Cam is child, then rotates too
+    void Movement()
+    {
+        Vector3 horizontalVelocity = charCont.velocity;
+        horizontalVelocity = new Vector3(charCont.velocity.x, 0, charCont.velocity.z);
+        float horizontalSpeed = horizontalVelocity.magnitude;
 
-
-        // To scurity check to not rotate 360º 
-        if (yourCam.transform.eulerAngles.x + (-Y) > 45 && yourCam.transform.eulerAngles.x + (-Y) < 325)
-        { }
-        else
+        if(charCont.isGrounded) //Check if character is touching ground
         {
+            moving = new Vector3(Input.GetAxis("Horizontal"), 0f, Input.GetAxis("Vertical")); // Horizontal Movement
+            moving *= speed;
 
-            yourCam.transform.RotateAround(player.position, yourCam.transform.right, -Y);
+            if(Input.GetKey(KeyCode.LeftShift)) //Sprinting
+            {
+                speed = 12f;
+            }
+            else {speed = 7f;}
+
+            if(Input.GetButton("Jump")) // Jumping
+            {
+                moving.y = jumpForce;
+            }
+            anim.SetFloat("Speed", horizontalSpeed);
         }
+
+        moving.y-= gravity * Time.deltaTime; //Gravity
+
+        //move
+        charCont.Move(moving*Time.deltaTime);
     }
 }
